@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { Card, CardBody, CardHeader, Divider, Chip, Button } from '@heroui/react'
 import { ProjectVisualizationProps } from './types'
+import { RepoNode } from '@/lib/github/types'
 
 export function ProjectVisualization({ data }: ProjectVisualizationProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
-  const [selectedNode, setSelectedNode] = useState<d3.HierarchyNode<any> | null>(null)
+  const [selectedNode, setSelectedNode] = useState<d3.HierarchyNode<RepoNode> | null>(null)
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -28,14 +29,14 @@ export function ProjectVisualization({ data }: ProjectVisualizationProps) {
     if (!data || !svgRef.current) return
 
     d3.select(svgRef.current).selectAll('*').remove()
-    const root = d3.hierarchy(data)
+    const root = d3.hierarchy<RepoNode>(data)
 
     const nodeWidth = 180
     const nodeHeight = 40
     const horizontalSpacing = 220
     const verticalSpacing = 50
 
-    const treeLayout = d3.tree()
+    const treeLayout = d3.tree<RepoNode>()
       .nodeSize([verticalSpacing, horizontalSpacing])
       .separation((a, b) => (a.parent === b.parent ? 1.2 : 1.5))
 
@@ -58,7 +59,7 @@ export function ProjectVisualization({ data }: ProjectVisualizationProps) {
     const g = svg.append('g')
       .attr('transform', `translate(${50}, ${dimensions.height / 2 - (maxX - minX) / 2})`)
 
-    const generateLinkPath = (d: d3.HierarchyLink<any>) => {
+    const generateLinkPath = (d: d3.HierarchyLink<RepoNode>) => {
       const sourceX = d.source.x || 0
       const sourceY = d.source.y || 0
       const targetX = d.target.x || 0
@@ -86,7 +87,7 @@ export function ProjectVisualization({ data }: ProjectVisualizationProps) {
       .attr('class', 'node')
       .attr('transform', d => `translate(${d.y || 0},${d.x || 0})`)
       .attr('cursor', 'pointer')
-      .on('click', (event, d) => {
+      .on('click', (event: MouseEvent, d: d3.HierarchyNode<RepoNode>) => {
         event.stopPropagation()
         setSelectedNode(d)
       })

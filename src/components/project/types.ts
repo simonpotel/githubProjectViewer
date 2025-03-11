@@ -1,4 +1,4 @@
-import { RepoNode } from '@/lib/github'
+import { RepoNode } from '@/lib/github/types'
 
 export interface ProjectExplorerProps {
   repoUrl: string

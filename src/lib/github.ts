@@ -88,7 +88,7 @@ export async function fetchRepositoryStructure(owner: string, repo: string): Pro
         throw new Error('No tree data received')
       }
 
-      const validTreeItems = treeData.tree.filter((item): item is TreeItem => {
+      const validTreeItems = treeData.tree.filter((item: { path?: string }): item is TreeItem => {
         return !!item.path
       })
 

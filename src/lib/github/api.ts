@@ -29,7 +29,7 @@ export async function fetchRepositoryStructure(owner: string, repo: string): Pro
       throw new Error('No tree data received')
     }
 
-    const validTreeItems = response.data.tree.filter((item): item is TreeItem => !!item.path)
+    const validTreeItems = response.data.tree.filter((item: { path?: string }): item is TreeItem => !!item.path)
     if (validTreeItems.length === 0) {
       throw new Error('No valid tree items found')
     }
