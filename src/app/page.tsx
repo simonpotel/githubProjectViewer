@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import ProjectExplorer from '@/components/ProjectExplorer'
+import { ProjectExplorer } from '@/components/project'
 import RepositoryForm from '@/components/RepositoryForm'
 import { Button, Card, CardBody, CardHeader, Divider } from '@heroui/react'
 
