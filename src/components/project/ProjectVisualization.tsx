@@ -5,6 +5,7 @@ import * as d3 from 'd3'
 import { Card, CardBody, CardHeader, Divider, Chip, Button } from '@heroui/react'
 import { ProjectVisualizationProps } from './types'
 import { RepoNode } from '@/lib/github/types'
+import { getFileColor, getLightFileColor, getBorderFileColor } from '@/lib/github/fileColors'
 
 export function ProjectVisualization({ data }: ProjectVisualizationProps) {
   const svgRef = useRef<SVGSVGElement>(null)
@@ -100,27 +101,21 @@ export function ProjectVisualization({ data }: ProjectVisualizationProps) {
       .attr('rx', 8)
       .attr('ry', 8)
       .attr('fill', d => {
-        switch(d.data.type) {
-          case 'file':
-            return 'rgba(59, 130, 246, 0.15)'
-          case 'dir':
-            return 'rgba(16, 185, 129, 0.15)'
-          case 'submodule':
-            return 'rgba(139, 92, 246, 0.15)'
-          default:
-            return 'rgba(75, 85, 99, 0.15)'
+        if (d.data.type === 'dir') {
+          return 'rgba(16, 185, 129, 0.15)' // Directory color
+        } else if (d.data.type === 'submodule') {
+          return 'rgba(139, 92, 246, 0.15)' // Submodule color
+        } else {
+          return getLightFileColor(d.data.name) // File color based on extension
         }
       })
       .attr('stroke', d => {
-        switch(d.data.type) {
-          case 'file':
-            return 'rgb(59, 130, 246)'
-          case 'dir':
-            return 'rgb(16, 185, 129)'
-          case 'submodule':
-            return 'rgb(139, 92, 246)'
-          default:
-            return 'rgb(75, 85, 99)'
+        if (d.data.type === 'dir') {
+          return 'rgb(16, 185, 129)' // Directory border
+        } else if (d.data.type === 'submodule') {
+          return 'rgb(139, 92, 246)' // Submodule border
+        } else {
+          return getFileColor(d.data.name) // File border based on extension
         }
       })
       .attr('stroke-width', 1.5)
@@ -190,18 +185,33 @@ export function ProjectVisualization({ data }: ProjectVisualizationProps) {
         <Card className="absolute top-4 right-4 bg-gray-800/90 backdrop-blur-lg border border-gray-700 text-white max-w-xs shadow-2xl">
           <CardHeader className="flex justify-between items-center pb-2">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-gray-700/50">
+              <div className="p-2 rounded-lg" style={{
+                backgroundColor: selectedNode.data.type === 'file' 
+                  ? getLightFileColor(selectedNode.data.name)
+                  : selectedNode.data.type === 'dir'
+                  ? 'rgba(16, 185, 129, 0.15)'
+                  : 'rgba(139, 92, 246, 0.15)',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: selectedNode.data.type === 'file'
+                  ? getBorderFileColor(selectedNode.data.name)
+                  : selectedNode.data.type === 'dir'
+                  ? 'rgb(16, 185, 129)'
+                  : 'rgb(139, 92, 246)'
+              }}>
                 {selectedNode.data.type === 'file' ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{
+                    color: selectedNode.data.type === 'file' ? getFileColor(selectedNode.data.name) : 'currentColor'
+                  }}>
                     <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
                     <polyline points="14 2 14 8 20 8"/>
                   </svg>
                 ) : selectedNode.data.type === 'dir' ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'rgb(16, 185, 129)' }}>
                     <path d="M3 4v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7l-2-2H5a2 2 0 0 0-2 2z"/>
                   </svg>
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'rgb(139, 92, 246)' }}>
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                   </svg>
                 )}
