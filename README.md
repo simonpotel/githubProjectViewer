@@ -25,6 +25,8 @@ This tool can be particularly useful for quickly showcasing structured Git proje
 
 ![Graph Visualization](assets/graph.png)
 
+![Tree Visualization](assets/tree.png)
+
 ## Features
 
 - Interactive network graph visualization of GitHub repositories
