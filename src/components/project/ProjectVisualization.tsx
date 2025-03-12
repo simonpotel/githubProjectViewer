@@ -71,9 +71,9 @@ export function ProjectVisualization({ data }: ProjectVisualizationProps) {
 
     g.append('g')
       .attr('fill', 'none')
-      .attr('stroke', '#374151')
-      .attr('stroke-opacity', 0.2)
-      .attr('stroke-width', 1)
+      .attr('stroke', 'rgb(55, 65, 81)')
+      .attr('stroke-opacity', 0.4)
+      .attr('stroke-width', 1.5)
       .selectAll('path')
       .data(root.links())
       .join('path')
@@ -99,15 +99,37 @@ export function ProjectVisualization({ data }: ProjectVisualizationProps) {
       .attr('height', nodeHeight)
       .attr('rx', 8)
       .attr('ry', 8)
-      .attr('fill', 'rgba(75, 85, 99, 0.3)')
-      .attr('stroke', '#4B5563')
+      .attr('fill', d => {
+        switch(d.data.type) {
+          case 'file':
+            return 'rgba(59, 130, 246, 0.15)'
+          case 'dir':
+            return 'rgba(16, 185, 129, 0.15)'
+          case 'submodule':
+            return 'rgba(139, 92, 246, 0.15)'
+          default:
+            return 'rgba(75, 85, 99, 0.15)'
+        }
+      })
+      .attr('stroke', d => {
+        switch(d.data.type) {
+          case 'file':
+            return 'rgb(59, 130, 246)'
+          case 'dir':
+            return 'rgb(16, 185, 129)'
+          case 'submodule':
+            return 'rgb(139, 92, 246)'
+          default:
+            return 'rgb(75, 85, 99)'
+        }
+      })
       .attr('stroke-width', 1.5)
-      .attr('stroke-opacity', 0.6)
+      .attr('stroke-opacity', 0.3)
 
     nodeGroups.append('text')
       .attr('dy', '0.3em')
       .attr('text-anchor', 'middle')
-      .attr('fill', '#E5E7EB')
+      .attr('fill', 'rgb(229, 231, 235)')
       .attr('font-size', '12px')
       .attr('font-weight', '500')
       .text(d => {

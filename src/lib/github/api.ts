@@ -1,9 +1,39 @@
 import { octokit } from './client'
 import { RepoNode, TreeItem } from './types'
 import { processTreeItems, findOrCreateDirectory, parseGitmodules } from './utils'
+import { cacheManager } from '../cache'
 
 export async function fetchRepositoryStructure(owner: string, repo: string): Promise<RepoNode> {
+  const cacheKey = `repo_structure:${owner}/${repo}`
+  const { data: cachedData, metadata } = cacheManager.get<RepoNode>(cacheKey)
+
   try {
+    if (cachedData && (metadata.etag || metadata.lastModified)) {
+      const headers: Record<string, string> = {
+        'X-GitHub-Api-Version': '2022-11-28',
+        accept: 'application/vnd.github.v3+json',
+      }
+      
+      if (metadata.etag) {
+        headers['If-None-Match'] = metadata.etag
+      }
+      if (metadata.lastModified) {
+        headers['If-Modified-Since'] = metadata.lastModified
+      }
+
+      try {
+        await octokit.request('GET /repos/{owner}/{repo}', {
+          owner,
+          repo,
+          headers
+        })
+      } catch (error: any) {
+        if (error.status === 304) {
+          return cachedData
+        }
+      }
+    }
+
     const repoResponse = await octokit.request('GET /repos/{owner}/{repo}', {
       owner,
       repo,
@@ -44,6 +74,11 @@ export async function fetchRepositoryStructure(owner: string, repo: string): Pro
     processTreeItems(validTreeItems, rootNode)
     await processSubmodules(owner, repo, defaultBranch, rootNode)
 
+    cacheManager.set(cacheKey, rootNode, {
+      etag: repoResponse.headers.etag,
+      lastModified: repoResponse.headers['last-modified']
+    })
+
     return rootNode
   } catch (error: any) {
     if (error.status === 404) {
@@ -66,8 +101,17 @@ async function processSubmodules(
   branch: string,
   rootNode: RepoNode
 ): Promise<void> {
+  const cacheKey = `submodules:${owner}/${repo}/${branch}`
+  const { data: cachedSubmodules } = cacheManager.get<RepoNode[]>(cacheKey)
+  
+  if (cachedSubmodules) {
+    rootNode.children = rootNode.children || []
+    rootNode.children.push(...cachedSubmodules)
+    return
+  }
+
   try {
-    const { data: gitmodulesContent } = await octokit.rest.repos.getContent({
+    const { data: gitmodulesContent, headers } = await octokit.rest.repos.getContent({
       owner,
       repo,
       path: '.gitmodules',
@@ -77,6 +121,7 @@ async function processSubmodules(
     if ('content' in gitmodulesContent) {
       const content = Buffer.from(gitmodulesContent.content, 'base64').toString()
       const submodules = parseGitmodules(content)
+      const submoduleNodes: RepoNode[] = []
 
       for (const submodule of submodules) {
         const match = submodule.url.match(/github\.com[:/]([^/]+)\/([^/.]+)(?:\.git)?$/)
@@ -94,11 +139,17 @@ async function processSubmodules(
 
             parentNode.children = parentNode.children || []
             parentNode.children.push(submoduleNode)
+            submoduleNodes.push(submoduleNode)
           } catch {
             // ignore submodule errors to prevent blocking the main repository structure
           }
         }
       }
+
+      cacheManager.set(cacheKey, submoduleNodes, {
+        etag: headers.etag,
+        lastModified: headers['last-modified']
+      })
     }
   } catch {
     // ignore .gitmodules errors as they are not critical
